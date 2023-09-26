@@ -12,3 +12,7 @@ curl --location 'http://localhost:9000/oauth2/token' \
 --data-urlencode 'grant_type=client_credentials'
 ```
 
+**Get Endpoints OpenId**
+```
+http://localhost:9000/.well-known/openid-configuration
+```

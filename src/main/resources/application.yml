@@ -1,0 +1,16 @@
+
+
+logging:
+  level:
+    org:
+      springframework:
+        security: TRACE
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id:
+            client-secret:

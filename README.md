@@ -3,7 +3,7 @@
 Spring Boot 3, Spring Autho2 Authorization Server
 
 ------
-**Request Client Credentials**
+**Auth With Client Credentials**
 ```
 curl --location 'http://localhost:9000/oauth2/token' \
 --header 'Content-Type: application/x-www-form-urlencoded' \

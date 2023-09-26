@@ -60,69 +60,76 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+                .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
         http
-                .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(
-                        new LoginUrlAuthenticationEntryPoint("/login")
-                ))
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .oidc(Customizer.withDefaults());
+                // Redirect to the login page when not authenticated from the
+                // authorization endpoint
+                .exceptionHandling((exceptions) -> exceptions
+                        .authenticationEntryPoint(
+                                new LoginUrlAuthenticationEntryPoint("/login"))
+                )
+                // Accept access tokens for User Info and/or Client Registration
+                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+
         return http.build();
     }
 
     @Bean
     @Order(2)
     public SecurityFilterChain authenticationFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authorize -> authorize
-            .anyRequest().authenticated())
-            .formLogin(Customizer.withDefaults())
-            .httpBasic(Customizer.withDefaults())
-            .oauth2Login(Customizer.withDefaults());
+        http
+                .authorizeHttpRequests((authorize) -> authorize
+                        .anyRequest().authenticated()
+                )
+                // Form login handles the redirect to the login page from the
+                // authorization server filter chain
+                .formLogin(Customizer.withDefaults());
+
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
         return new InMemoryUserDetailsManager(
-                User.withUsername("user1")
-                        .password("{noop}password")
-                        .authorities("read")
-                        .build()
+                User.withDefaultPasswordEncoder()
+                .username("user")
+                .password("password")
+                .roles("USER")
+                .build()
         );
     }
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("client-id")
-                .clientSecret("secret")
+                .clientId("messaging-client")
+                .clientSecret("{noop}secret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantTypes(grantTypes-> {
-                    grantTypes.addAll(Arrays.asList(AuthorizationGrantType.JWT_BEARER, AuthorizationGrantType.REFRESH_TOKEN));
-                })
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
                 .redirectUri("http://127.0.0.1:8080/authorized")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
-                .scope("read")
-                .clientSettings(ClientSettings.builder()
-                        .requireAuthorizationConsent(true)
-                        .build())
+                .scope("message.read")
+                .scope("message.write")
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
                 .build();
         return new InMemoryRegisteredClientRepository(registeredClient);
     }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
-        var keyPair = generateRsaKey();
+        KeyPair keyPair = generateRsaKey();
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        var rsaKey = new RSAKey.Builder(publicKey)
+        RSAKey rsaKey = new RSAKey.Builder(publicKey)
                 .privateKey(privateKey)
-                .keyID("keyid")
+                .keyID(UUID.randomUUID().toString())
                 .build();
-        var jwkSet = new JWKSet(rsaKey);
+        JWKSet jwkSet = new JWKSet(rsaKey);
         return new ImmutableJWKSet<>(jwkSet);
     }
 
@@ -132,8 +139,9 @@ public class SecurityConfig {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             keyPair = keyPairGenerator.generateKeyPair();
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        }
+        catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
         return keyPair;
     }

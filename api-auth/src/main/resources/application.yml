@@ -13,6 +13,6 @@ logging:
 #      client:
 #        registration:
 #          google:
-#            client-id: 334278454129-olum7nmv5u41b4vqn0abivab59qe4d6h.apps.googleusercontent.com
-#            client-secret: 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
+#            client-id:
+#            client-secret:
 

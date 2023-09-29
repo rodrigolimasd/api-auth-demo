@@ -17,3 +17,6 @@ spring:
             client-id: authdemo
             client-secret: euwl0gsME8uqfi3WdrVfalXjtpln83dc
             scope: openid, profile, email, roles
+
+jwt:
+  jwk-set-uri: http://localhost:8081/realms/authdemo/protocol/openid-connect/certs

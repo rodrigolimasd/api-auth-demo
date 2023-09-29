@@ -1,6 +1,7 @@
 package com.example.apiauthwithkeycloak.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -20,9 +21,9 @@ public class SecuredController {
         return "hello";
     }
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "hello";
+    @GetMapping("/teste")
+    public String admin(Authentication authentication) {
+        return "hello "+ authentication.getPrincipal();
     }
 
     @GetMapping("/user")
